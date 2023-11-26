@@ -103,7 +103,7 @@ attack_sound = pygame.mixer.Sound("353708__samsterbirdies__sword-swings.wav")
 
 
 def backmusic(m):
-    #pygame.mixer.music.load('261608__txirimiri__guitar-soundtrack.wav')
+
     pygame.mixer.music.load('261608__txirimiri__guitar-soundtrack.wav')
     if m == "on":
         # pygame.mixer.music.load('attack.wav')
