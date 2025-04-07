@@ -11,11 +11,14 @@ import pickle
 # initialize pygame
 pygame.init()
 pygame.font.init()
-myfont = pygame.font.SysFont('Comic Sans MS', 5)
+myFont = pygame.font.SysFont('Comic Sans MS', 5)
+
+
+# create screen
 display_width = 800
 display_height = 600
-# create screen
 screen = pygame.display.set_mode((display_width, display_height))
+
 # background
 background = pygame.image.load('background.png')
 title = pygame.image.load('game background4.png')
@@ -26,9 +29,89 @@ icon = pygame.image.load('sword.png')
 pygame.display.set_icon(icon)
 
 # player
-playerImg = pygame.image.load('elf.png')
+
 playerX = 370
 playerY = 480
+
+full_heart = pygame.image.load('full_heart.png').convert_alpha()
+empty_heart = pygame.image.load('empty_heart.png').convert_alpha()
+half_heart = pygame.image.load('half_heart.png').convert_alpha()
+
+class Player(pygame.sprite.Sprite):
+
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load('elf.png').convert_alpha()
+        self.rect = self.image.get_rect(center=(playerX, playerY))
+        self.health = 10
+        self.max_health = 10
+        self.luck = 0
+
+    def spawn(self, spawnx , spawny):
+        screen.blit(self.image,(spawnx,spawny))
+
+    def printhealth(self):
+        global y
+        y = self.health
+        print(y)
+
+
+    def resetplayer(self):
+        global playerX
+        global playerY
+        playerX = 370
+        playerY = 480
+        self.max_health = 10
+        self.health = self.max_health
+
+
+    def get_damage(self):
+        if self.health > 0:
+            self.health -= 1
+        elif self.health <= 0:
+            screen.blit(gameover, (150, 125))
+            pygame.display.update()
+            time.sleep(5)
+            player1.resetplayer()
+            enemies[0].resetEnemy()
+            intro()
+
+    def get_health(self):
+        if self.health < self.max_health:
+            self.health += 2
+
+    def full_hearts(self):
+        for heart in range(self.health):
+            screen.blit(full_heart, (heart * 50 + 10, 45))
+
+    def empty_hearts(self):
+        for heart in range(self.max_health):
+            if heart < self.health:
+                screen.blit(full_heart, (heart * 50 + 10, 5))
+            else:
+                screen.blit(empty_heart, (heart * 50 + 10, 5))
+
+    def half_hearts(self):
+        half_hearts_total = self.health / 2
+        half_heart_exists = half_hearts_total - int(half_hearts_total) != 0
+
+        for heart in range(int(self.max_health / 2)):
+            if int(half_hearts_total) > heart:
+                screen.blit(full_heart, (heart * 50 + 10, 5))
+            elif half_heart_exists and int(half_hearts_total) == heart:
+                screen.blit(half_heart, (heart * 50 + 10, 5))
+            else:
+                screen.blit(empty_heart, (heart * 50 + 10, 5))
+
+    def increasemaxhealth(self):
+        if self.max_health < 32:
+            self.max_health += 2
+
+    def update(self):
+        self.half_hearts()
+
+player1 = Player()
+
 playerX_change = 0
 playerY_change = 0
 
@@ -47,31 +130,43 @@ sword_state = "ready"
 # conn.commit()
 # conn.close()``````    Q
 
-class enemy:
-    def __init__(self, number, level, name, image):
-        self.number = number
-        self.level = level
-        self.name = name
-        self.image = image
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load('rhino.png')
+        self.rect = self.image.get_rect(center=(20, 20))
+        self.health = 5
+        self.max_health = 5
 
+    def spawn(self, spawnx , spawny):
+        if enemyalive:
+            screen.blit(self.image,(spawnx,spawny))
 
-e1 = enemy(1, 1, "rhino", 'rhino.png')
+    def get_damage(self):
+        if self.health > 0:
+            self.health -= 1
+        else:
+            enemyofscreen()
+
+    def get_health(self):
+        if self.health < self.max_health:
+            self.health += 5
+
+    def displayenemyhealth(self):
+        self.health
+
+    def resetEnemy(self):
+        global enemyX
+        global enemyY
+        global moveOrNot
+        enemyX = 20
+        enemyY = 10
+        moveOrNot = 0.5
+        enemyMovement(1)
+
+e1 = Enemy()
 # e2 =...
 enemies = [e1]
-
-
-class playerchar:
-    def __init__(self, level, name, image):
-        self.level = level
-        self.name = name
-        self.image = image
-
-
-plyrlvl = 1
-plyrname = ("USERINPUT")
-
-playerobj = playerchar(plyrlvl, plyrname, 'elf.png')
-
 
 class item:
     def __init__(self, ID, name, addhealth, healing, attackpower, expadd, value):
@@ -85,14 +180,13 @@ class item:
 
 
 item1 = item(1, "health potion", 0, 100, 0, 0, 5)
-item2 = item(2, "large sword", 0, 100, 0, 0, 5)
+item2 = item(2, "large sword", 0, 0, 10, 0, 5)
 items = [item1]
 
-enemyImg = pygame.image.load(enemies[0].image)
 # rhinoX = random.randint(0, 800)
 # rhinoY = random.randint(50, 300)
-enemyX = (10)
-enemyY = (20)
+enemyX = 10
+enemyY = 20
 enemyX_change = 0
 enemyY_change = 0
 
@@ -110,17 +204,6 @@ def backmusic(m):
         pygame.mixer.music.play(-1)
     else:
         pygame.mixer.music.stop()
-
-
-def player(x, y):
-    screen.blit(playerImg, (x, y))
-
-
-def enemy(x, y):
-    if enemyalive:
-        screen.blit(enemyImg, (x, y))
-    # else:
-
 
 def enemyMovement(speed):
     global iterations
@@ -333,11 +416,11 @@ def viewinventory():
         costvar.set(cost)
         stockvar.set(stock)
         if itemvar.get() == "health potion":
-            player1.sprite.get_health()
+            player1.get_health()
             del inventory[which_invselected()]
             set_invselect()
         elif itemvar.get() == "heart":
-            player1.sprite.increasemaxhealth()
+            player1.increasemaxhealth()
             del inventory[which_invselected()]
             set_invselect()
 
@@ -401,14 +484,7 @@ def savemoney():
     cursor.close()
     gold.close()
     
-def spawnenemy():
-    global enemyX
-    global enemyY
-    global moveOrNot
-    enemyX = 20
-    enemyY = 10
-    moveOrNot = 0.5
-    enemyMovement(1)
+
 
 def movement():
     global running
@@ -453,15 +529,17 @@ def movement():
                 pause()
 
             if event.key == pygame.K_w:
-                player1.sprite.increasemaxhealth()
+                player1.increasemaxhealth()
+                player1.printhealth()
             if event.key == pygame.K_s:
-                player1.sprite.get_damage()
+                player1.get_damage()
+                player1.printhealth()
             if event.key == pygame.K_n:
                 savemoney()
             if event.key == pygame.K_e:
-                spawnenemy()
+                enemies[0].resetEnemy()
             if event.key == pygame.K_y:
-                player1.sprite.printhealth()
+                player1.printhealth()
                 sys.exit()
 
         if event.type == pygame.KEYUP:
@@ -526,81 +604,11 @@ class button():
 gameover = pygame.image.load('death screen.png')
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.image.load('elf.png').convert_alpha()
-        self.rect = self.image.get_rect(center=(400, 400))
-        self.health = 10
-        self.max_health = 10
-        self.luck = 0
-
-    def printhealth(self):
-        global y
-        y=self.health
-        print(y)
 
 
-    def resetplayer(self):
-        global playerX
-        global playerY
-        playerX = 370
-        playerY = 480
-        self.max_health = 10
-        self.health = self.max_health
 
 
-    def get_damage(self):
-        if self.health > 0:
-            self.health -= 1
-        elif self.health <= 0:
-            screen.blit(gameover, (150, 125))
-            pygame.display.update()
-            time.sleep(5)
-            player1.sprite.resetplayer()
-            spawnenemy()
-            intro()
 
-    def get_health(self):
-        if self.health < self.max_health:
-            self.health += 2
-
-    def full_hearts(self):
-        for heart in range(self.health):
-            screen.blit(full_heart, (heart * 50 + 10, 45))
-
-    def empty_hearts(self):
-        for heart in range(self.max_health):
-            if heart < self.health:
-                screen.blit(full_heart, (heart * 50 + 10, 5))
-            else:
-                screen.blit(empty_heart, (heart * 50 + 10, 5))
-
-    def half_hearts(self):
-        half_hearts_total = self.health / 2
-        half_heart_exists = half_hearts_total - int(half_hearts_total) != 0
-
-        for heart in range(int(self.max_health / 2)):
-            if int(half_hearts_total) > heart:
-                screen.blit(full_heart, (heart * 50 + 10, 5))
-            elif half_heart_exists and int(half_hearts_total) == heart:
-                screen.blit(half_heart, (heart * 50 + 10, 5))
-            else:
-                screen.blit(empty_heart, (heart * 50 + 10, 5))
-
-    def increasemaxhealth(self):
-        if self.max_health < 32:
-            self.max_health += 2
-
-    def update(self):
-        self.half_hearts()
-
-
-full_heart = pygame.image.load('full_heart.png').convert_alpha()
-empty_heart = pygame.image.load('empty_heart.png').convert_alpha()
-half_heart = pygame.image.load('half_heart.png').convert_alpha()
-
-player1 = pygame.sprite.GroupSingle(Player())
 
 
 def enemyofscreen():
@@ -610,28 +618,6 @@ def enemyofscreen():
     enemyX = -200
     enemyY = -200
     moveOrNot = 0
-
-
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.image.load('rhino.png').convert_alpha()
-        self.rect = self.image.get_rect(center=(20, 20))
-        self.health = 5
-        self.max_health = 5
-
-    def get_damage(self):
-        if self.health > 0:
-            self.health -= 1
-        else:
-            enemyofscreen()
-
-    def get_health(self):
-        if self.health < self.max_health:
-            self.health += 5
-
-    def displayenemyhealth(self):
-        self.health
 
 
 enemy1 = pygame.sprite.GroupSingle(Enemy())
@@ -668,7 +654,7 @@ def combat():
             myLabel = Label(root, text="enemy has missed").pack()
         else:
             myLabel = Label(root, text="you have recieved 5 damage").pack()
-            Y['text'] = 'health remaining:' + str(root.printhealth)
+            print (player1)
             player1.sprite.get_damage()
 
 
@@ -983,8 +969,8 @@ def main(maxtick):
                 time.sleep(1)
                 main(1)
 
-        player(playerX, playerY)
-        enemy(enemyX, enemyY)
+        player1.spawn(playerX, playerY)
+        enemies[0].spawn(enemyX, enemyY)
         pygame.display.update()
 
 
